@@ -1,61 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Run DOS ZIP Locally</title>
+  <title>Run Local DOS ZIP</title>
+  <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
   <style>
-    body {
-      background: black;
-      color: lime;
-      font-family: monospace;
-      text-align: center;
-      margin: 0;
-      padding: 1rem;
-    }
-    canvas {
-      display: block;
-      margin: 1rem auto;
-    }
-    input {
-      background: black;
-      color: lime;
-      border: 1px solid lime;
-      padding: 0.5rem;
-      font-family: monospace;
-    }
+    html, body { margin: 0; height: 100%; background: black; color: lime; font-family: monospace; text-align: center; }
+    #dos { width: 100%; height: calc(100% - 50px); }
+    input { margin: 10px; }
   </style>
 </head>
 <body>
   <h1>Select a DOS ZIP file</h1>
-  <input type="file" id="zipfile" accept=".zip"><br>
-  <canvas id="dosbox" width="640" height="400"></canvas>
+  <input type="file" id="zipfile" accept=".zip">
+  <div id="dos"></div>
 
-  <script src="https://cdn.jsdelivr.net/gh/dreamlayers/em-dosbox@master/loader.js"></script>
+  <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
   <script>
-    const canvas = document.getElementById('dosbox');
+    const container = document.getElementById('dos');
+    let dos;
 
-    document.getElementById('zipfile').addEventListener('change', async (event) => {
-      const file = event.target.files[0];
+    document.getElementById('zipfile').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = function () {
-        const zipArrayBuffer = reader.result;
-        const zipBlob = new Blob([zipArrayBuffer], { type: 'application/zip' });
-        const zipURL = URL.createObjectURL(zipBlob);
+      // Create Blob URL for the zip archive
+      const blobURL = URL.createObjectURL(file);
 
-        Dosbox.run({
-          id: 'dosbox',
-          onrun: function (dosbox) {
-            console.log('DOSBox started');
-          },
-          zipfile: zipURL,
-          autostart: true
-        });
-      };
-      reader.readAsArrayBuffer(file);
+      if (dos) dos.exit(); // In case mounting second time
+
+      dos = await Dos(container, {
+        wdosboxUrl: "https://v8.js-dos.com/6.22/current/wasm.js", // load DOS emulator
+      });
+
+      // Mount and run the ZIP
+      dos.run(blobURL, {
+        onprogress: (loaded, total) => {
+          container.textContent = `Loading ${((loaded/total)*100).toFixed(0)}%`;
+        }
+      });
     });
   </script>
 </body>
 </html>
-
