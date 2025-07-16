@@ -1,43 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Run Local DOS ZIP</title>
+  <meta charset="UTF-8">
+  <title>DOS ZIP Loader with Virtual Keyboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
   <style>
-    html, body { margin: 0; height: 100%; background: black; color: lime; font-family: monospace; text-align: center; }
-    #dos { width: 100%; height: calc(100% - 50px); }
-    input { margin: 10px; }
+    body {
+      margin: 0;
+      background: black;
+      color: lime;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    #header {
+      padding: 0.5em;
+      text-align: center;
+    }
+
+    #zipfile {
+      margin-bottom: 0.5em;
+      font-family: monospace;
+    }
+
+    #dos {
+      flex: 1;
+    }
+
+    #keyboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+      gap: 2px;
+      padding: 5px;
+      background: #111;
+    }
+
+    .key {
+      padding: 10px;
+      background: #222;
+      color: lime;
+      text-align: center;
+      border-radius: 4px;
+      user-select: none;
+      font-size: 14px;
+      font-family: monospace;
+    }
+
+    .key:active {
+      background: lime;
+      color: black;
+    }
   </style>
 </head>
 <body>
-  <h1>Select a DOS ZIP file</h1>
-  <input type="file" id="zipfile" accept=".zip">
+  <div id="header">
+    <h2>Select a DOS ZIP file</h2>
+    <input type="file" id="zipfile" accept=".zip">
+  </div>
+
   <div id="dos"></div>
+
+  <div id="keyboard">
+    <!-- Simple set, you can expand this -->
+    <div class="key">A</div>
+    <div class="key">B</div>
+    <div class="key">C</div>
+    <div class="key">D</div>
+    <div class="key">E</div>
+    <div class="key">F</div>
+    <div class="key">G</div>
+    <div class="key">H</div>
+    <div class="key">I</div>
+    <div class="key">J</div>
+    <div class="key">K</div>
+    <div class="key">L</div>
+    <div class="key">M</div>
+    <div class="key">N</div>
+    <div class="key">O</div>
+    <div class="key">P</div>
+    <div class="key">Q</div>
+    <div class="key">R</div>
+    <div class="key">S</div>
+    <div class="key">T</div>
+    <div class="key">U</div>
+    <div class="key">V</div>
+    <div class="key">W</div>
+    <div class="key">X</div>
+    <div class="key">Y</div>
+    <div class="key">Z</div>
+    <div class="key">0</div>
+    <div class="key">1</div>
+    <div class="key">2</div>
+    <div class="key">3</div>
+    <div class="key">4</div>
+    <div class="key">5</div>
+    <div class="key">6</div>
+    <div class="key">7</div>
+    <div class="key">8</div>
+    <div class="key">9</div>
+    <div class="key">ENTER</div>
+    <div class="key">SPACE</div>
+    <div class="key">.</div>
+    <div class="key">,</div>
+    <div class="key">-</div>
+    <div class="key">/</div>
+    <div class="key">\\</div>
+    <div class="key">:</div>
+    <div class="key">BACKSPACE</div>
+  </div>
 
   <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
   <script>
-    const container = document.getElementById('dos');
-    let dos;
+    let dosInstance = null;
 
     document.getElementById('zipfile').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
 
-      // Create Blob URL for the zip archive
       const blobURL = URL.createObjectURL(file);
 
-      if (dos) dos.exit(); // In case mounting second time
+      if (dosInstance) dosInstance.exit();
 
-      dos = await Dos(container, {
-        wdosboxUrl: "https://v8.js-dos.com/6.22/current/wasm.js", // load DOS emulator
+      dosInstance = await Dos(document.getElementById('dos'), {
+        wdosboxUrl: "https://v8.js-dos.com/6.22/current/wasm.js"
       });
 
-      // Mount and run the ZIP
-      dos.run(blobURL, {
+      dosInstance.run(blobURL, {
         onprogress: (loaded, total) => {
-          container.textContent = `Loading ${((loaded/total)*100).toFixed(0)}%`;
+          document.getElementById('dos').textContent = `Loading ${((loaded / total) * 100).toFixed(0)}%`;
         }
+      });
+    });
+
+    const keyMap = {
+      'SPACE': ' ',
+      'ENTER': '\n',
+      'BACKSPACE': 'Backspace'
+    };
+
+    document.querySelectorAll('.key').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const label = btn.textContent;
+        const char = keyMap[label] || label;
+
+        if (!dosInstance) return;
+
+        // Trigger actual key press in js-dos emulator
+        dosInstance.keyboardSendString(char);
       });
     });
   </script>
